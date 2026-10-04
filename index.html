@@ -207,6 +207,9 @@ table.st th:first-child,table.st td:first-child{text-align:left}
 .hx-nudge{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--hx-acc);border-radius:12px;background:var(--surface);font-size:14px;font-weight:600}
 .hx-link{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--hx-acc);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .hx .danger{color:var(--hx-bad);border-color:var(--hx-bad)}
+.hx-saved{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+.hx-saved>button{flex:0 0 auto}
+.hx-paste{font:inherit;font-size:16px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
 /* hx:css:end */
 </style>
 <style>body{margin:0}[hidden]{display:none!important}</style>
@@ -356,7 +359,7 @@ function playView(){
     top = `<div class="banner"><div class="eyebrow" style="color:inherit;opacity:.85">Game over · ${plural(n,"round")}</div>
       <h2>${w.length>1?`Tie: ${w.map(N).join(" &amp; ")}`:`${N(w[0])} wins`} with ${hi}</h2>
       <div class="num">${order.filter(i=>t[i]!==hi).map(i=>`${N(i)} ${t[i]}`).join(" · ")}</div>
-      <div style="opacity:.9">This game is saved in History.</div>
+      ${hx.saved()}
       <div class="btnrow"><button data-act="rematch" id="rematch">Rematch</button><button data-act="newsetup" id="newsetup">New setup</button></div></div>`;
   }
 
@@ -874,7 +877,7 @@ const hx = (() => {
       return `<div class="hx-game">
         <div class="hx-meta"><b>${e(whenTxt(g.date))}</b><span class="hint">${status}${g.note ? ` · ${e(g.note)}` : ""}</span></div>
         <div class="hx-scores num">${order.map(i => `<span class="${g.done && w.includes(i) ? "hx-win" : ""}">${e(sideLabel(g.sides[i]))} <b>${num(t[i])}</b></span>`).join(" · ")}</div>
-        <div class="btnrow hx-btns"><button class="small" type="button" data-hx="game" data-id="${e(g.id)}" id="hx-g-${e(g.id)}">${open ? "Hide scorecard" : "Scorecard"}</button>${current ? "" : `<button class="small danger" type="button" data-hx="del" data-id="${e(g.id)}" id="hx-d-${e(g.id)}">${ui.confirm === del ? "Tap to delete" : "Delete"}</button>`}</div>
+        <div class="btnrow hx-btns"><button class="small" type="button" data-hx="game" data-id="${e(g.id)}" id="hx-g-${e(g.id)}">${open ? "Hide scorecard" : "Scorecard"}</button><button class="small" type="button" data-hx="sres" data-id="${e(g.id)}" id="hx-s-${e(g.id)}">${ui.copied === g.id ? "Copied ✓" : "Share"}</button>${current ? "" : `<button class="small danger" type="button" data-hx="del" data-id="${e(g.id)}" id="hx-d-${e(g.id)}">${ui.confirm === del ? "Tap to delete" : "Delete"}</button>`}</div>
         ${open ? scorecard(g) : ""}
       </div>`;
     }).join("");
@@ -894,7 +897,7 @@ const hx = (() => {
   function view() {
     const back = `<button class="small ghost" type="button" data-hx="back" id="hx-back">Back</button>`;
     const top = `<div class="hx-top"><div><div class="eyebrow">${e(HX.title)}</div><h1>History</h1></div>${back}</div>`;
-    if (!games.length) return `<div class="hx">${top}<div class="panel"><h2>No games yet</h2><p class="hint">Every game is saved here as you play, with the date, the ${HX.sideWord || "team"}s and every ${unitOne}'s score.</p></div>${backupView()}</div>`;
+    if (!games.length) return `<div class="hx">${top}<div class="panel"><h2>No games yet</h2><p class="hint">Every game is saved here as you play, with the date, the ${HX.sideWord || "team"}s and every ${unitOne}'s score.</p></div>${moveView()}${backupView()}</div>`;
     const list = byDate().filter(inRange), stats = career(list), done = list.filter(isDone);
     const sel = ui.sel && stats.players.find(p => p.k === ui.sel);
     const years = [...new Set(games.map(g => new Date(g.date).getFullYear()).filter(y => !isNaN(y)))].sort((a, b) => b - a);
@@ -917,7 +920,7 @@ const hx = (() => {
         ${tm.length ? `<div class="panel"><h2>Partnerships</h2><div class="stwrap"><table class="st"><thead><tr><th>Pair</th><th>GP</th><th>Wins</th><th>Win %</th></tr></thead><tbody>${tm.map(r => `<tr><td>${e(r.names.join(" & "))}</td><td>${r.gp}</td><td>${r.wins}</td><td>${pct(r.wins, r.gp)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
         ${recordsView(done, stats)}`;
     }
-    return `<div class="hx">${top}${nudge}${range}${body}${logView(list, sel)}${backupView()}</div>`;
+    return `<div class="hx">${top}${nudge}${range}${body}${logView(list, sel)}${backupView()}${moveView()}</div>`;
   }
 
   // ----- backup -----
@@ -943,8 +946,13 @@ const hx = (() => {
   function restore(text) {
     let data;
     try { data = JSON.parse(text); } catch (err) { ui.msg = `That file isn't a ${HX.title} backup.`; return; }
+    if (data && data.kind === BUNDLE && data.apps) data = Array.isArray(data.apps[HX.app]) ? data.apps[HX.app] : [];
     const list = Array.isArray(data) ? data : data && Array.isArray(data.games) && (!data.app || data.app === HX.app) ? data.games : null;
     if (!list) { ui.msg = `That file isn't a ${HX.title} backup.`; return; }
+    ui.msg = merge(list);
+  }
+  // Adds games this phone doesn't have; a game it has is replaced only by a more complete copy (never the one being played).
+  function merge(list) {
     let added = 0, updated = 0, skipped = 0, bad = 0;
     list.forEach(g => {
       if (!valid(g)) { bad++; return; }
@@ -956,8 +964,110 @@ const hx = (() => {
       else skipped++;
     });
     persist();
-    ui.msg = `Added ${plural(added, "game")}.` + (updated ? ` Updated ${updated}.` : "") + (skipped ? ` ${skipped} already here.` : "") + (bad ? ` ${bad} unreadable.` : "");
+    return `Added ${plural(added, "game")}.` + (updated ? ` Updated ${updated}.` : "") + (skipped ? ` ${skipped} already here.` : "") + (bad ? ` ${bad} unreadable.` : "");
   }
+
+  // ----- moving History into a Home Screen icon -----
+  // On iPhone an app opened from a Home Screen icon keeps its own storage, separate from Safari. All the card apps
+  // share Safari's storage, so one Copy there carries every card game's history; Paste in an icon takes this game's part.
+  const BUNDLE = "card-games-history";
+  const CARD_APPS = ["hand-foot", "hearts", "skyjo", "cribbage", "spades", "euchre", "pitch", "casino", "flip7", "up-down-river", "presidents", "mao", "card-golf"];
+  const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const standalone = () => navigator.standalone === true || !!(window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  const here = () => (location.host + location.pathname).replace(/index\.html$/, "");
+  function bundle() {
+    const apps = {}; let n = 0, k = 0;
+    CARD_APPS.forEach(id => {
+      let a = [];
+      try { a = JSON.parse(localStorage.getItem(id + "-history-v1") || "[]"); } catch (err) { a = []; }
+      if (Array.isArray(a) && a.length) { apps[id] = a; n += a.length; k++; }
+    });
+    return { text: JSON.stringify({ kind: BUNDLE, version: 1, exported: new Date().toISOString(), apps }), games: n, apps: k };
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (err) { /* older browsers: copy from a hidden box */ }
+    const t = document.createElement("textarea");
+    t.value = text; t.setAttribute("readonly", ""); t.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(t); t.select(); t.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+    t.remove();
+    return ok;
+  }
+  async function copyAll() {
+    const b = bundle();
+    if (!b.games) { ui.mmsg = "No card games are saved in Safari yet."; return; }
+    ui.mmsg = await copyText(b.text)
+      ? `Copied ${plural(b.games, "game")} from ${plural(b.apps, "card app")}. Now open the Home Screen icon, tap History, then Paste from Safari.`
+      : "Couldn't copy on this browser. Use Share backup instead, then Restore in the icon.";
+  }
+  async function pasteFromSafari() {
+    let text = "";
+    try { text = await navigator.clipboard.readText(); } catch (err) { text = ""; }
+    if (!text) { ui.pasteBox = true; ui.mmsg = "Long-press the box, tap Paste, then tap Add games."; return; }
+    take(text);
+  }
+  function take(text) {
+    let data = null;
+    try { data = JSON.parse(text); } catch (err) { data = null; }
+    if (data && data.kind === BUNDLE && data.apps && typeof data.apps === "object") {
+      const list = data.apps[HX.app];
+      ui.pasteBox = false;
+      ui.mmsg = Array.isArray(list) && list.length ? merge(list).replace(/^Added/, "From Safari: added") : `What you copied has no ${HX.title} games.`;
+    } else if (data && (data.app === HX.app || Array.isArray(data)) && (Array.isArray(data) || Array.isArray(data.games))) {
+      ui.pasteBox = false; ui.mmsg = merge(Array.isArray(data) ? data : data.games);
+    } else ui.mmsg = "That isn't card game history. In Safari, open History and tap Copy for Home Screen first.";
+  }
+  function moveView() {
+    if (!iOS) return "";
+    const msg = ui.mmsg ? `<p class="hint" role="status">${e(ui.mmsg)}</p>` : "";
+    if (!standalone()) return `<div class="panel"><h2>Home Screen icon</h2>
+      <p class="hint">An app opened from a Home Screen icon keeps its own History, separate from Safari. To bring your games over, tap Copy here, then open the icon, tap History and tap Paste from Safari. One Copy carries every card game's history.</p>
+      <div class="btnrow"><button type="button" data-hx="mcopy" id="hx-mcopy">Copy for Home Screen</button></div>${msg}</div>`;
+    return `<div class="panel"><h2>Games from Safari</h2>
+      <p class="hint">This Home Screen icon keeps its own History, separate from Safari. If you played in Safari before, open ${e(here())} in Safari, tap History, then Copy for Home Screen. Then come back here and tap Paste from Safari.</p>
+      <div class="btnrow"><button type="button" data-hx="mpaste" id="hx-mpaste">Paste from Safari</button></div>
+      ${ui.pasteBox ? `<textarea id="hx-mtext" class="hx-paste" rows="3" placeholder="Long-press here and tap Paste" aria-label="Copied history"></textarea><div class="btnrow"><button type="button" data-hx="mpaste2" id="hx-mpaste2">Add games</button></div>` : ""}${msg}</div>`;
+  }
+
+  // ----- sharing a result as text (group chats) -----
+  function resultText(g) {
+    const t = totalsOf(g), w = g.done ? winnersOf(g) : [];
+    const better = (a, b) => g.lowWins ? a < b : a > b;
+    const order = t.map((_, i) => i).sort((a, b) => (g.lowWins ? t[a] - t[b] : t[b] - t[a]) || a - b);
+    const rest = order.filter(i => !w.includes(i));
+    const lines = [`${HX.title} · ${dayTxt(g.date)}`];
+    if (!g.done) lines.push(`Standings after ${plural(g.rounds.length, unitOne, unitMany)}`);
+    order.filter(i => w.includes(i)).forEach(i => lines.push(`🏆 ${sideLabel(g.sides[i])} ${num(t[i])}`));
+    rest.forEach(i => {
+      const pos = w.length + 1 + rest.filter(j => better(t[j], t[i])).length, tied = rest.some(j => j !== i && t[j] === t[i]);
+      lines.push(`${tied ? "T" : ""}${pos}. ${sideLabel(g.sides[i])} ${num(t[i])}`);
+    });
+    const foot = [g.done ? plural(g.rounds.length, unitOne, unitMany) : "", g.note || ""].filter(Boolean).join(" · ");
+    if (foot) lines.push(foot);
+    const solo = w.length === 1 && g.sides[w[0]].players.length === 1 ? g.sides[w[0]].players[0] : "";
+    if (solo && !guest(solo)) {
+      const p = career(byDate().filter(x => String(x.date) <= String(g.date))).players.find(x => x.k === pkey(solo));
+      if (p && p.streak >= 2) lines.push(`🔥 ${p.name} has won ${p.streak} in a row`);
+    }
+    return lines.join("\n");
+  }
+  async function shareResult(id) {
+    const g = games.find(x => x.id === id); if (!g) return;
+    const text = resultText(g);
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; } catch (err) { if (err.name === "AbortError") return; }
+    }
+    if (!(await copyText(text))) return;
+    ui.copied = id; render();
+    setTimeout(() => { if (ui.copied === id) { ui.copied = null; render(); } }, 3000);
+  }
+  function shareButton(label, cls) {
+    const id = state.hxId;
+    if (!id || !games.some(g => g.id === id)) return "";
+    return `<button class="${cls || "small"}" type="button" data-hx="sres" data-id="${e(id)}" id="hx-sres">${ui.copied === id ? "Copied ✓" : e(label || "Share result")}</button>`;
+  }
+  function saved() { return `<div class="hx-saved"><span style="opacity:.9">This game is saved in History.</span>${shareButton()}</div>`; }
 
   // ----- events -----
   function confirmThen(key, fn) {
@@ -978,13 +1088,17 @@ const hx = (() => {
     else if (a === "download") { download(); render(); }
     else if (a === "share") share().then(render);
     else if (a === "restore") { const f = document.getElementById("hx-file"); if (f) f.click(); }
+    else if (a === "sres") shareResult(b.dataset.id);
+    else if (a === "mcopy") copyAll().then(render);
+    else if (a === "mpaste") pasteFromSafari().then(render);
+    else if (a === "mpaste2") { const t = document.getElementById("hx-mtext"); take(t ? t.value : ""); render(); }
   });
   document.addEventListener("change", ev => {
     if (ev.target.id === "hx-range") { ui.range = ev.target.value; ui.sel = null; render(); }
     if (ev.target.id === "hx-file" && ev.target.files && ev.target.files[0]) ev.target.files[0].text().then(restore, () => { ui.msg = "Couldn't read that file."; }).then(render);
   });
 
-  return { sync, view, button, note, isOpen: () => ui.open, games: () => games };
+  return { sync, view, button, note, saved, shareButton, isOpen: () => ui.open, games: () => games };
 })();
 // Wrap the app's own save() and render(): every save keeps the archive current, and History takes over the screen while open.
 {
@@ -1008,5 +1122,18 @@ if ("serviceWorker" in navigator && window.isSecureContext && location.protocol.
 try { if (navigator.storage && navigator.storage.persist && !localStorage.getItem("cards-up-down-river-persist")) { localStorage.setItem("cards-up-down-river-persist", "1"); navigator.storage.persist(); } } catch (e) {}
 </script>
 <!-- offline:end -->
+<!-- cardnight:start -->
+<script>
+// Opened from Card Night (one Home Screen icon for every card game): a link back to the game list.
+(function(){
+  try{ if (sessionStorage.getItem("card-night") !== "1") return; }catch(e){ return; }
+  var app = document.getElementById("app"), st = document.createElement("style"), bar = document.createElement("div");
+  st.textContent = ".cn-bar{margin:10px auto 6px}.cn-back{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 14px;border-radius:999px;border:1px solid var(--line,rgba(128,128,128,.4));background:var(--surface,transparent);color:var(--ink,inherit);font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;text-decoration:none}";
+  document.head.appendChild(st);
+  bar.className = "cn-bar"; bar.innerHTML = '<a class="cn-back" href="/card-night/" id="cn-back"><span aria-hidden="true">‹</span> All games</a>';
+  if (app){ bar.style.maxWidth = getComputedStyle(app).maxWidth; app.parentNode.insertBefore(bar, app); } else document.body.insertBefore(bar, document.body.firstChild);
+})();
+</script>
+<!-- cardnight:end -->
 </body>
 </html>
