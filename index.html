@@ -995,11 +995,12 @@ const hx = (() => {
     return ok;
   }
   async function copyAll() {
-    const b = bundle();
-    if (!b.games) { ui.mmsg = "No card games are saved in Safari yet."; return; }
+    const b = bundle(), app = standalone();
+    if (!b.games) { ui.mmsg = app ? "There are no games in this app's History yet." : "No card game History is saved in Safari on this phone. If you play from a game's own Home Screen icon, its History is in that icon: open it, tap History, then Copy History."; return; }
     ui.mmsg = await copyText(b.text)
-      ? `Copied ${plural(b.games, "game")} from ${plural(b.apps, "card app")}. Now open the Home Screen icon, tap History, then Paste from Safari.`
-      : "Couldn't copy on this browser. Use Share backup instead, then Restore in the icon.";
+      ? app ? `Copied ${plural(b.games, "game")}. Now open Card Night or the other Home Screen icon and tap Paste History.`
+        : `Copied ${plural(b.games, "game")} from ${plural(b.apps, "card app")}. Now open the Home Screen icon or Card Night and tap Paste History.`
+      : "Couldn't copy on this browser. Use Share backup instead, then Restore in the other app.";
   }
   async function pasteFromSafari() {
     let text = "";
@@ -1013,20 +1014,22 @@ const hx = (() => {
     if (data && data.kind === BUNDLE && data.apps && typeof data.apps === "object") {
       const list = data.apps[HX.app];
       ui.pasteBox = false;
-      ui.mmsg = Array.isArray(list) && list.length ? merge(list).replace(/^Added/, "From Safari: added") : `What you copied has no ${HX.title} games.`;
+      ui.mmsg = Array.isArray(list) && list.length ? merge(list) : `What you copied has no ${HX.title} games.`;
     } else if (data && (data.app === HX.app || Array.isArray(data)) && (Array.isArray(data) || Array.isArray(data.games))) {
       ui.pasteBox = false; ui.mmsg = merge(Array.isArray(data) ? data : data.games);
-    } else ui.mmsg = "That isn't card game history. In Safari, open History and tap Copy for Home Screen first.";
+    } else ui.mmsg = "That isn't card game history. Copy it first: in Safari, History → Copy for Home Screen; in another Home Screen icon, History → Copy History.";
   }
   function moveView() {
     if (!iOS) return "";
     const msg = ui.mmsg ? `<p class="hint" role="status">${e(ui.mmsg)}</p>` : "";
     if (!standalone()) return `<div class="panel"><h2>Home Screen icon</h2>
-      <p class="hint">An app opened from a Home Screen icon keeps its own History, separate from Safari. To bring your games over, tap Copy here, then open the icon, tap History and tap Paste from Safari. One Copy carries every card game's history.</p>
+      <p class="hint">An app opened from a Home Screen icon keeps its own History, separate from Safari. To bring your games over, tap Copy here, then open the Home Screen icon or Card Night and tap Paste History. One Copy carries every card game's history.</p>
       <div class="btnrow"><button type="button" data-hx="mcopy" id="hx-mcopy">Copy for Home Screen</button></div>${msg}</div>`;
-    return `<div class="panel"><h2>Games from Safari</h2>
-      <p class="hint">This Home Screen icon keeps its own History, separate from Safari. If you played in Safari before, open ${e(here())} in Safari, tap History, then Copy for Home Screen. Then come back here and tap Paste from Safari.</p>
-      <div class="btnrow"><button type="button" data-hx="mpaste" id="hx-mpaste">Paste from Safari</button></div>
+    return `<div class="panel"><h2>Move History</h2>
+      <p class="hint">This Home Screen app keeps its own History, separate from Safari and from other Home Screen icons.</p>
+      <p class="hint">To move these games into Card Night or another icon, tap Copy History, then open it there and tap Paste History.</p>
+      <p class="hint">To bring in games you played in Safari, open ${e(here())} in Safari, tap History, then Copy for Home Screen. Then come back here and tap Paste History.</p>
+      <div class="btnrow"><button type="button" data-hx="mcopy" id="hx-mcopy">Copy History</button><button type="button" data-hx="mpaste" id="hx-mpaste">Paste History</button></div>
       ${ui.pasteBox ? `<textarea id="hx-mtext" class="hx-paste" rows="3" placeholder="Long-press here and tap Paste" aria-label="Copied history"></textarea><div class="btnrow"><button type="button" data-hx="mpaste2" id="hx-mpaste2">Add games</button></div>` : ""}${msg}</div>`;
   }
 
