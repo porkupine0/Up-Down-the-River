@@ -171,6 +171,43 @@ table.st th:first-child,table.st td:first-child{text-align:left}
 .guide ul,.guide ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 .example{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;display:flex;flex-direction:column;gap:4px}
 .example b{color:var(--accent)}
+
+/* hx:css:start */
+/* game history (shared) */
+.hx-hbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.hx{display:flex;flex-direction:column;gap:18px;--hx-acc:var(--accent,var(--gold,var(--amber,#8a5a00)));--hx-bad:var(--err,var(--red,var(--bad,#b3261e)))}
+.hx-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hx-top h1{margin:0}
+.hx .stwrap{overflow-x:auto}
+.hx table.st{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+.hx table.st th,.hx table.st td{padding:7px 6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+.hx table.st th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.hx table.st th:first-child,.hx table.st td:first-child{text-align:left}
+.hx select{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.hx-awards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.hx-award{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:2px;min-width:0}
+.hx-an{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--hx-acc);font-weight:800}
+.hx-aw{font-weight:800;font-size:18px;overflow-wrap:anywhere}
+.hx-ad{font-size:13px;color:var(--muted)}
+.hx-log{display:flex;flex-direction:column}
+.hx-game{display:flex;flex-direction:column;gap:6px;padding-block:12px;border-top:1px solid var(--line)}
+.hx-game:first-child{border-top:0;padding-top:0}
+.hx-meta{display:flex;flex-direction:column;gap:2px}
+.hx-scores{font-size:15px;overflow-wrap:anywhere}
+.hx-win{color:var(--hx-acc);font-weight:700}
+.hx-tag{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border:1px solid currentColor;border-radius:6px;padding:0 5px;margin-right:4px}
+.hx-btns>*{flex:0 0 auto}
+.hx-card{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.hx-sc td{line-height:1.25}
+.hx table.hx-sc th{white-space:normal;min-width:48px}
+.hx table.hx-sc th:first-child{min-width:0}
+.hx-run{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.hx-tot td{font-weight:800;border-bottom:0}
+.hx-won{color:var(--hx-acc)}
+.hx-nudge{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--hx-acc);border-radius:12px;background:var(--surface);font-size:14px;font-weight:600}
+.hx-link{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--hx-acc);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.hx .danger{color:var(--hx-bad);border-color:var(--hx-bad)}
+/* hx:css:end */
 </style>
 <style>body{margin:0}[hidden]{display:none!important}</style>
 </head>
@@ -242,7 +279,7 @@ function render(){
   const focusId = document.activeElement && document.activeElement.id;
   const y = window.scrollY;
   const reset = state.phase === "play" && state.tab === "game" ? `<button class="small ghost" data-act="newgame" id="newgame">${confirmKey==="new"?"Tap to confirm":"New game"}</button>` : "";
-  app.innerHTML = `<div class="brand"><div class="logo">${LOGO}<h1>Up &amp; Down the River</h1></div>${reset}</div>
+  app.innerHTML = `<div class="brand"><div class="logo">${LOGO}<h1>Up &amp; Down the River</h1></div><div class="hx-hbtns">${hx.button()}${reset}</div></div>
     <div class="tabs" role="tablist"><button class="tab" role="tab" id="tab-game" data-act="tab" data-v="game" aria-selected="${state.tab==="game"}">Game</button><button class="tab" role="tab" id="tab-guide" data-act="tab" data-v="guide" aria-selected="${state.tab==="guide"}">How to play</button></div>` +
     (state.tab === "guide" ? guideView() : state.phase === "setup" ? setupView() : playView());
   if (focusId){ const el = document.getElementById(focusId); if (el) el.focus({preventScroll:true}); }
@@ -319,6 +356,7 @@ function playView(){
     top = `<div class="banner"><div class="eyebrow" style="color:inherit;opacity:.85">Game over · ${plural(n,"round")}</div>
       <h2>${w.length>1?`Tie: ${w.map(N).join(" &amp; ")}`:`${N(w[0])} wins`} with ${hi}</h2>
       <div class="num">${order.filter(i=>t[i]!==hi).map(i=>`${N(i)} ${t[i]}`).join(" · ")}</div>
+      <div style="opacity:.9">This game is saved in History.</div>
       <div class="btnrow"><button data-act="rematch" id="rematch">Rematch</button><button data-act="newsetup" id="newsetup">New setup</button></div></div>`;
   }
 
@@ -353,7 +391,7 @@ function playView(){
   }
 
   return top + `<div class="players">${players}</div>` + roundBlock + sheetView() + statsView() +
-    `<p class="hint">Your game is kept on this device, and the screen stays on while you play. ${SCORING[state.rules.scoring].desc}${simul()?" Everyone bids at once.":state.rules.hook?" Dealer is hooked.":""}</p>`;
+    `<p class="hint">Every game is saved in History on this device, and the screen stays on while you play. ${SCORING[state.rules.scoring].desc}${simul()?" Everyone bids at once.":state.rules.hook?" Dealer is hooked.":""}</p>`;
 }
 
 function hookValue(bids, dealer, cards){
@@ -604,6 +642,362 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => { if (e.target.id === "first-dealer"){ state.setup.firstDealer = +e.target.value; save(); } });
 
+/* hx:js:start */
+// History adapter: how an Up & Down the River game looks to the shared history module.
+// One side per player, one scorecard row per round of the river (labelled with its card count).
+const HX = {
+  app: "up-down-river", title: "Up & Down the River", unit: ["round", "rounds"], sideWord: "player", lowWins: false,
+  guest: n => /^player \d+$/i.test(String(n).trim()),
+  current(){
+    if (state.phase !== "play" || !state.rounds.length) return null;
+    const P = state.players, R = state.rounds, t = totals(), fin = done(), hi = Math.max(...t);
+    return {
+      sides: P.map(n => ({ name: n, players: [n] })),
+      rounds: R.map(r => r.bids.map((b,i) => scoreOf(b, r.tricks[i]))),
+      done: fin, winners: fin ? t.map((_,i) => i).filter(i => t[i] === hi) : undefined,
+      labels: R.map((_,i) => `${i+1} · ${isZero(i) ? "forehead" : plural(state.plan[i], "card")}`),
+      note: `${Math.max(...state.plan)}-card river · ${(SCORING[state.rules.scoring] || SCORING.classic).label}`,
+      extra: {
+        made: P.map((_,i) => R.filter(r => r.bids[i] === r.tricks[i]).length),
+        raw: { plan: state.plan, dealer0: state.dealer0, rules: state.rules, rounds: R }
+      }
+    };
+  },
+  detail(g){
+    const x = g.extra; if (!x || !Array.isArray(x.made)) return "";
+    return `<p class="hint">Bids made: ${g.sides.map((s,i) => `${esc(s.name)} ${x.made[i] || 0} of ${g.rounds.length}`).join(" · ")}</p>`;
+  },
+  records(done){
+    const rows = [];
+    done.forEach(g => { const x = g.extra; if (x && Array.isArray(x.made)) g.sides.forEach((s,i) => rows.push({ g, who: s.name, v: x.made[i] || 0 })); });
+    if (!rows.length) return [];
+    const m = Math.max(...rows.map(r => r.v)), top = rows.filter(r => r.v === m);
+    const names = [...new Set(top.map(r => r.who))].slice(0,3).join(", ");
+    const when = top.length === 1 ? `${m} of ${top[0].g.rounds.length} · ${new Date(top[0].g.date).toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" })}` : `${plural(m, "bid")} · ${top.length} times`;
+    return [["Most bids made in a game", names, when]];
+  }
+};
+/* ---------- game history (shared module, same in every score app) ----------
+   Every game with at least one scored round is saved to localStorage as it's played, with its date,
+   the teams or players, every round's scores, the final totals and the winner. A "History" screen shows
+   all-time records by player name, a game log with full scorecards, and backup / restore.
+   The app supplies an adapter, HX (defined just above), and this module wraps the app's save() and render(). */
+const hx = (() => {
+  const HKEY = HX.app + "-history-v1", BKEY = HX.app + "-last-backup";
+  const unitOne = (HX.unit || ["round", "rounds"])[0], unitMany = (HX.unit || ["round", "rounds"])[1];
+  const ui = { open: false, range: "all", sel: null, game: null, all: false, msg: "", confirm: null, timer: 0 };
+  const e = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const num = n => (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-US");
+  const plural = (n, w, ws) => `${n} ${n === 1 ? w : (ws || w + "s")}`;
+  const pkey = n => String(n || "").trim().replace(/\s+/g, " ").toLowerCase();
+  const guest = n => !pkey(n) || (HX.guest ? HX.guest(n) : /^(player|partner|team|side|seat) \d+$/i.test(String(n).trim()));
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const whenTxt = iso => { const d = new Date(iso); return isNaN(d) ? "Unknown date" : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) + " · " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); };
+  const dayTxt = iso => { const d = new Date(iso); return isNaN(d) ? "Unknown date" : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+
+  // ----- storage -----
+  const valid = g => !!g && typeof g.id === "string" && Array.isArray(g.sides) && g.sides.length >= 1 && g.sides.every(s => s && typeof s.name === "string" && Array.isArray(s.players))
+    && Array.isArray(g.rounds) && g.rounds.every(r => Array.isArray(r) && r.length === g.sides.length && r.every(v => typeof v === "number" && isFinite(v)));
+  function load() { try { const a = JSON.parse(localStorage.getItem(HKEY) || "[]"); return Array.isArray(a) ? a.filter(valid) : []; } catch (err) { return []; } }
+  let games = load();
+  function persist() { try { localStorage.setItem(HKEY, JSON.stringify(games)); } catch (err) { /* storage full or blocked */ } }
+  const totalsOf = g => Array.isArray(g.totals) && g.totals.length === g.sides.length ? g.totals : g.sides.map((_, i) => g.rounds.reduce((s, r) => s + r[i], 0));
+  function winnersOf(g) {
+    if (Array.isArray(g.winners) && g.winners.length) return g.winners;
+    const t = totalsOf(g), best = g.lowWins ? Math.min(...t) : Math.max(...t);
+    return t.map((_, i) => i).filter(i => t[i] === best);
+  }
+  const isDone = g => !!g.done;
+
+  // ----- keep the archive in step with the current game -----
+  // A game is saved as soon as its first round is scored. Starting a new game (or undoing back to nothing)
+  // detaches it; a game undone to nothing after one round is dropped, anything longer stays as unfinished.
+  function sync() {
+    if (typeof state !== "object" || !state) return;
+    let cur = null;
+    try { cur = HX.current(); } catch (err) { cur = null; }
+    const has = cur && Array.isArray(cur.rounds) && cur.rounds.length > 0;
+    const k = state.hxId ? games.findIndex(g => g.id === state.hxId) : -1;
+    if (has) {
+      if (!state.hxId) state.hxId = newId();
+      const prev = k >= 0 ? games[k] : null;
+      const g = {
+        id: state.hxId, date: prev ? prev.date : new Date().toISOString(), updated: new Date().toISOString(),
+        sides: cur.sides.map(s => ({ name: String(s.name || ""), players: (s.players || []).map(String) })),
+        rounds: cur.rounds.map(r => r.map(v => +v || 0)),
+        totals: (cur.totals || null) && cur.totals.map(v => +v || 0),
+        done: !!cur.done, winners: cur.done && Array.isArray(cur.winners) ? cur.winners.slice() : undefined,
+        lowWins: !!(cur.lowWins != null ? cur.lowWins : HX.lowWins), note: cur.note || "", labels: cur.labels || undefined, extra: cur.extra || undefined
+      };
+      if (!g.totals) delete g.totals;
+      const before = prev ? JSON.stringify(Object.assign({}, prev, { updated: 0 })) : "";
+      if (before === JSON.stringify(Object.assign({}, g, { updated: 0 }))) return;
+      if (k >= 0) games[k] = g; else games.push(g);
+      persist();
+    } else if (state.hxId) {
+      // games with no game-over of their own end when the app says so (New game): the best total wins
+      let ended = false;
+      try { ended = typeof HX.ended === "function" && !!HX.ended(); } catch (err) { ended = false; }
+      if (k >= 0 && !games[k].done && ended) {
+        const g = games[k], t = g.totals || g.sides.map((_, i) => g.rounds.reduce((a, r) => a + (+r[i] || 0), 0));
+        const best = g.lowWins ? Math.min(...t) : Math.max(...t);
+        g.done = true; g.winners = t.map((_, i) => i).filter(i => t[i] === best); g.updated = new Date().toISOString();
+        persist();
+      } else if (k >= 0 && !games[k].done && games[k].rounds.length <= 1) { games.splice(k, 1); persist(); }
+      state.hxId = null;
+    }
+  }
+
+  // ----- stats -----
+  const byDate = () => games.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  function inRange(g) {
+    if (ui.range === "all") return true;
+    const d = new Date(g.date);
+    if (isNaN(d)) return false;
+    if (ui.range[0] === "y") return d.getFullYear() === +ui.range.slice(1);
+    return Date.now() - d <= +ui.range.slice(1) * 864e5;
+  }
+  const rangeLabel = () => ui.range === "all" ? "all time" : ui.range[0] === "y" ? ui.range.slice(1) : `the last ${ui.range.slice(1)} days`;
+  function sideLabel(s) {
+    const named = s.players.filter(p => !guest(p));
+    if (s.players.length > 1) return guest(s.name) || !s.name ? (named.length ? s.players.join(" & ") : s.name || "Team") : `${s.name} (${s.players.join(" & ")})`;
+    return s.players[0] || s.name;
+  }
+  function shortLabel(s) {
+    if (s.players.length > 1) return guest(s.name) || !s.name ? s.players.join(" & ") : s.name;
+    return s.players[0] || s.name;
+  }
+  function career(list) {
+    const map = new Map(), pairs = new Map();
+    list.filter(isDone).forEach(g => {
+      const t = totalsOf(g), w = winnersOf(g);
+      g.sides.forEach((s, i) => {
+        const won = w.includes(i);
+        s.players.forEach(name => {
+          if (guest(name)) return;
+          const k = pkey(name);
+          let p = map.get(k);
+          if (!p) { p = { k, name: "", gp: 0, wins: 0, shared: 0, sum: 0, best: null, worst: null, streak: 0, bestStreak: 0 }; map.set(k, p); }
+          p.name = String(name).trim();
+          p.gp++; p.sum += t[i];
+          const better = (a, b) => g.lowWins ? a < b : a > b;
+          if (p.best == null || better(t[i], p.best)) p.best = t[i];
+          if (p.worst == null || better(p.worst, t[i])) p.worst = t[i];
+          if (won) { p.wins++; if (w.length > 1) p.shared++; p.streak++; p.bestStreak = Math.max(p.bestStreak, p.streak); } else p.streak = 0;
+        });
+        const named = s.players.filter(n => !guest(n));
+        if (s.players.length === 2 && named.length === 2) {
+          const pk = named.map(pkey).sort().join("|");
+          const r = pairs.get(pk) || { names: named.map(n => String(n).trim()).sort((a, b) => a.localeCompare(b)), gp: 0, wins: 0 };
+          r.gp++; if (won) r.wins++;
+          pairs.set(pk, r);
+        }
+      });
+    });
+    const players = [...map.values()].sort((a, b) => b.wins - a.wins || b.wins / b.gp - a.wins / a.gp || a.name.localeCompare(b.name));
+    const teams = [...pairs.values()].sort((a, b) => b.wins - a.wins || b.gp - a.gp || a.names.join().localeCompare(b.names.join()));
+    return { players, teams };
+  }
+  const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
+  const avg = (a, b) => b ? num(Math.round(a / b)) : "–";
+
+  // ----- views -----
+  function button() { return `<button class="small ghost" data-hx="open" id="hx-open" type="button">History</button>`; }
+  function note() { return `<p class="hint">Saved in History with today's date.</p>`; }
+  function unbacked() { let at = 0; try { at = +localStorage.getItem(BKEY) || 0; } catch (err) { /* ignore */ } return games.filter(isDone).length - at; }
+  function award(t, w, d) { return `<div class="hx-award"><span class="hx-an">${t}</span><span class="hx-aw">${w}</span><span class="hx-ad">${d}</span></div>`; }
+
+  function recordsView(done, stats) {
+    if (!done.length) return "";
+    const items = [];
+    const scores = [], margins = [];
+    done.forEach(g => {
+      const t = totalsOf(g), w = winnersOf(g);
+      g.sides.forEach((s, i) => scores.push({ v: t[i], who: sideLabel(s), g }));
+      if (w.length === 1 && g.sides.length > 1) {
+        const others = t.filter((_, i) => i !== w[0]);
+        const runner = g.lowWins ? Math.min(...others) : Math.max(...others);
+        margins.push({ v: Math.abs(t[w[0]] - runner), who: sideLabel(g.sides[w[0]]), g });
+      }
+    });
+    const pick = (list, hi) => { const m = hi ? Math.max(...list.map(x => x.v)) : Math.min(...list.map(x => x.v)); return { m, who: list.filter(x => x.v === m) }; };
+    const names = who => e([...new Set(who.map(x => x.who))].slice(0, 3).join(", ")) + (new Set(who.map(x => x.who)).size > 3 ? "…" : "");
+    const when = who => who.length === 1 ? dayTxt(who[0].g.date) : `${who.length} times`;
+    const lowWins = done.every(g => g.lowWins);
+    const best = pick(scores, !lowWins), worst = pick(scores, lowWins);
+    items.push(award(lowWins ? "Lowest score" : "Highest score", names(best.who), `${num(best.m)} · ${when(best.who)}`));
+    items.push(award(lowWins ? "Highest score" : "Lowest score", names(worst.who), `${num(worst.m)} · ${when(worst.who)}`));
+    if (margins.length) { const mg = pick(margins, true); items.push(award("Biggest win", names(mg.who), `By ${num(mg.m)} · ${when(mg.who)}`)); }
+    const most = f => stats.players.length ? Math.max(...stats.players.map(p => p[f])) : 0;
+    const whoOf = (m, f) => e(stats.players.filter(p => p[f] === m).map(p => p.name).slice(0, 3).join(", "));
+    const mw = most("wins"), ms = most("bestStreak"), mg2 = most("gp");
+    if (stats.players.length) {
+      items.push(award("Most wins", mw ? whoOf(mw, "wins") : "–", plural(mw, "win")));
+      items.push(award("Longest win streak", ms ? whoOf(ms, "bestStreak") : "–", `${ms} in a row`));
+      items.push(award("Most games", whoOf(mg2, "gp"), plural(mg2, "game")));
+    }
+    if (HX.records) { try { (HX.records(done) || []).forEach(r => items.push(award(e(r[0]), e(r[1]), e(r[2])))); } catch (err) { /* adapter records are optional */ } }
+    return `<div class="panel"><h2>Records</h2><div class="hx-awards">${items.join("")}</div></div>`;
+  }
+
+  function scorecard(g) {
+    const t = totalsOf(g), w = winnersOf(g), run = g.sides.map(() => 0);
+    const head = `<tr><th>${e(unitOne[0].toUpperCase() + unitOne.slice(1))}</th>${g.sides.map((s, i) => `<th class="${g.done && w.includes(i) ? "hx-won" : ""}">${e(shortLabel(s))}</th>`).join("")}</tr>`;
+    const body = g.rounds.map((r, ri) => {
+      r.forEach((v, i) => { run[i] += v; });
+      const label = g.labels && g.labels[ri] ? g.labels[ri] : String(ri + 1);
+      return `<tr><td>${e(label)}</td>${r.map((v, i) => `<td>${num(v)}${g.rounds.length > 1 ? `<span class="hx-run">${num(run[i])}</span>` : ""}</td>`).join("")}</tr>`;
+    }).join("");
+    const foot = `<tr class="hx-tot"><td>Total</td>${t.map((v, i) => `<td class="${g.done && w.includes(i) ? "hx-won" : ""}">${num(v)}</td>`).join("")}</tr>`;
+    let more = "";
+    if (HX.detail) { try { more = HX.detail(g) || ""; } catch (err) { more = ""; } }
+    return `<div class="hx-card"><div class="stwrap hx-wrap"><table class="st hx-sc"><thead>${head}</thead><tbody>${body}${foot}</tbody></table></div>${g.rounds.length > 1 ? `<p class="hint">Small numbers are running totals.</p>` : ""}${more}</div>`;
+  }
+
+  function logView(list, sel) {
+    let rows = list.slice().reverse();
+    if (sel) rows = rows.filter(g => g.sides.some(s => s.players.some(n => pkey(n) === sel.k)));
+    if (!rows.length) return "";
+    const shown = ui.all ? rows : rows.slice(0, 10);
+    const items = shown.map(g => {
+      const t = totalsOf(g), w = winnersOf(g);
+      const order = t.map((_, i) => i).sort((a, b) => (g.lowWins ? t[a] - t[b] : t[b] - t[a]) || a - b);
+      const current = g.id === state.hxId;
+      const lead = w.map(i => e(sideLabel(g.sides[i]))).join(" &amp; ");
+      let status;
+      if (g.done) {
+        const others = t.filter((_, i) => !w.includes(i));
+        const runner = others.length ? (g.lowWins ? Math.min(...others) : Math.max(...others)) : null;
+        status = w.length > 1 ? `${lead} tied` : `${lead} won${runner != null ? ` by ${num(Math.abs(t[w[0]] - runner))}` : ""}`;
+      } else status = `<span class="hx-tag">${current ? "In progress" : "Unfinished"}</span> after ${plural(g.rounds.length, unitOne, unitMany)}`;
+      const open = ui.game === g.id, del = "del-" + g.id;
+      return `<div class="hx-game">
+        <div class="hx-meta"><b>${e(whenTxt(g.date))}</b><span class="hint">${status}${g.note ? ` · ${e(g.note)}` : ""}</span></div>
+        <div class="hx-scores num">${order.map(i => `<span class="${g.done && w.includes(i) ? "hx-win" : ""}">${e(sideLabel(g.sides[i]))} <b>${num(t[i])}</b></span>`).join(" · ")}</div>
+        <div class="btnrow hx-btns"><button class="small" type="button" data-hx="game" data-id="${e(g.id)}" id="hx-g-${e(g.id)}">${open ? "Hide scorecard" : "Scorecard"}</button>${current ? "" : `<button class="small danger" type="button" data-hx="del" data-id="${e(g.id)}" id="hx-d-${e(g.id)}">${ui.confirm === del ? "Tap to delete" : "Delete"}</button>`}</div>
+        ${open ? scorecard(g) : ""}
+      </div>`;
+    }).join("");
+    return `<div class="panel"><h2>${sel ? `${e(sel.name)}'s games` : "Game log"}</h2><div class="hx-log">${items}</div>
+      ${rows.length > 10 ? `<button class="small" type="button" data-hx="all" id="hx-all">${ui.all ? "Show fewer" : `Show all ${rows.length} games`}</button>` : ""}</div>`;
+  }
+
+  function backupView() {
+    return `<div class="panel"><h2>Backup &amp; share</h2>
+      <p class="hint">History is stored on this phone only. Clearing site data or switching phones loses it, so back it up now and then.</p>
+      <p class="hint">To combine two phones' history, share the backup to the other phone and tap Restore there. Games it already has are skipped.</p>
+      <div class="btnrow"><button type="button" data-hx="share" id="hx-share" ${games.length ? "" : "disabled"}>Share backup</button><button type="button" data-hx="download" id="hx-download" ${games.length ? "" : "disabled"}>Download</button><button type="button" data-hx="restore" id="hx-restore">Restore</button></div>
+      <input type="file" id="hx-file" accept=".json,application/json" hidden>
+      ${ui.msg ? `<p class="hint" role="status">${e(ui.msg)}</p>` : ""}</div>`;
+  }
+
+  function view() {
+    const back = `<button class="small ghost" type="button" data-hx="back" id="hx-back">Back</button>`;
+    const top = `<div class="hx-top"><div><div class="eyebrow">${e(HX.title)}</div><h1>History</h1></div>${back}</div>`;
+    if (!games.length) return `<div class="hx">${top}<div class="panel"><h2>No games yet</h2><p class="hint">Every game is saved here as you play, with the date, the ${HX.sideWord || "team"}s and every ${unitOne}'s score.</p></div>${backupView()}</div>`;
+    const list = byDate().filter(inRange), stats = career(list), done = list.filter(isDone);
+    const sel = ui.sel && stats.players.find(p => p.k === ui.sel);
+    const years = [...new Set(games.map(g => new Date(g.date).getFullYear()).filter(y => !isNaN(y)))].sort((a, b) => b - a);
+    const opt = (v, l) => `<option value="${v}" ${ui.range === v ? "selected" : ""}>${l}</option>`;
+    const range = `<div class="row"><label class="eyebrow" for="hx-range">Showing</label><select id="hx-range" class="grow">${opt("all", "All time")}${opt("d30", "Last 30 days")}${opt("d90", "Last 90 days")}${years.map(y => opt("y" + y, y)).join("")}</select></div>`;
+    const nudge = unbacked() >= 5 ? `<div class="hx-nudge"><span class="grow">${plural(unbacked(), "finished game")} since your last backup.</span><button class="small" type="button" data-hx="download" id="hx-nudge">Back up now</button></div>` : "";
+    let body;
+    if (sel) {
+      body = `<div class="panel"><div class="row"><h2 class="grow">${e(sel.name)}</h2><button class="small" type="button" data-hx="player" data-k="" id="hx-everyone">Everyone</button></div>
+        <div class="hx-awards">${award("Games", sel.gp, `in ${rangeLabel()}`)}${award("Wins", sel.wins, `${pct(sel.wins, sel.gp)} of games${sel.shared ? `, ${sel.shared} shared` : ""}`)}${award(done.every(g => g.lowWins) ? "Best (lowest)" : "Best score", sel.best == null ? "–" : num(sel.best), "single game")}${award("Average", avg(sel.sum, sel.gp), "per game")}${award("Best streak", sel.bestStreak, "wins in a row")}</div></div>`;
+    } else if (!done.length) {
+      body = `<div class="panel"><h2>All-time records</h2><p class="hint">No finished games in ${rangeLabel()} yet. Unfinished games are listed below.</p></div>`;
+    } else {
+      const pl = stats.players, tm = stats.teams;
+      body = `<div class="panel"><div><h2>Players</h2><p class="hint">${plural(done.length, "finished game")} in ${rangeLabel()}. Tap a name for their record and games.</p></div>
+        ${pl.length ? `<div class="stwrap"><table class="st"><thead><tr><th>Player</th><th>GP</th><th>Wins</th><th>Win %</th><th>Avg</th><th>Best</th></tr></thead><tbody>
+          ${pl.map(p => `<tr><td><button class="hx-link" type="button" data-hx="player" data-k="${e(p.k)}">${e(p.name)}</button></td><td>${p.gp}</td><td>${p.wins}</td><td>${pct(p.wins, p.gp)}</td><td>${avg(p.sum, p.gp)}</td><td>${p.best == null ? "–" : num(p.best)}</td></tr>`).join("")}
+        </tbody></table></div><p class="hint">GP: games played. Wins include ties. Avg and Best are ${HX.sideWord === "player" ? "the player's" : "the team's"} final score.</p>`
+        : `<p class="hint">Only unnamed players so far. Name everyone at the start of a game to track them here.</p>`}</div>
+        ${tm.length ? `<div class="panel"><h2>Partnerships</h2><div class="stwrap"><table class="st"><thead><tr><th>Pair</th><th>GP</th><th>Wins</th><th>Win %</th></tr></thead><tbody>${tm.map(r => `<tr><td>${e(r.names.join(" & "))}</td><td>${r.gp}</td><td>${r.wins}</td><td>${pct(r.wins, r.gp)}</td></tr>`).join("")}</tbody></table></div></div>` : ""}
+        ${recordsView(done, stats)}`;
+    }
+    return `<div class="hx">${top}${nudge}${range}${body}${logView(list, sel)}${backupView()}</div>`;
+  }
+
+  // ----- backup -----
+  function file() {
+    const data = JSON.stringify({ app: HX.app, version: 1, exported: new Date().toISOString(), games }, null, 2);
+    return new File([data], `${HX.app}-history-${new Date().toISOString().slice(0, 10)}.json`, { type: "application/json" });
+  }
+  function marked() { try { localStorage.setItem(BKEY, String(games.filter(isDone).length)); } catch (err) { /* ignore */ } }
+  function download() {
+    const f = file(), a = document.createElement("a");
+    a.href = URL.createObjectURL(f); a.download = f.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    marked(); ui.msg = `Downloaded ${f.name}.`;
+  }
+  async function share() {
+    const f = file();
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      try { await navigator.share({ files: [f], title: `${HX.title} history` }); marked(); ui.msg = "Backup shared."; }
+      catch (err) { if (err.name !== "AbortError") ui.msg = "Couldn't share. Try Download instead."; }
+    } else { download(); ui.msg += " This browser can't share files, so it was downloaded instead."; }
+  }
+  function restore(text) {
+    let data;
+    try { data = JSON.parse(text); } catch (err) { ui.msg = `That file isn't a ${HX.title} backup.`; return; }
+    const list = Array.isArray(data) ? data : data && Array.isArray(data.games) && (!data.app || data.app === HX.app) ? data.games : null;
+    if (!list) { ui.msg = `That file isn't a ${HX.title} backup.`; return; }
+    let added = 0, updated = 0, skipped = 0, bad = 0;
+    list.forEach(g => {
+      if (!valid(g)) { bad++; return; }
+      const k = games.findIndex(x => x.id === g.id);
+      const copy = JSON.parse(JSON.stringify(g));
+      if (isNaN(new Date(copy.date))) copy.date = new Date().toISOString();
+      if (k < 0) { games.push(copy); added++; }
+      else if (g.id !== state.hxId && (g.done && !games[k].done || g.rounds.length > games[k].rounds.length)) { games[k] = copy; updated++; }
+      else skipped++;
+    });
+    persist();
+    ui.msg = `Added ${plural(added, "game")}.` + (updated ? ` Updated ${updated}.` : "") + (skipped ? ` ${skipped} already here.` : "") + (bad ? ` ${bad} unreadable.` : "");
+  }
+
+  // ----- events -----
+  function confirmThen(key, fn) {
+    if (ui.confirm === key) { clearTimeout(ui.timer); ui.confirm = null; fn(); return; }
+    ui.confirm = key; render();
+    clearTimeout(ui.timer);
+    ui.timer = setTimeout(() => { ui.confirm = null; if (ui.open) render(); }, 3500);
+  }
+  document.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-hx]"); if (!b) return;
+    const a = b.dataset.hx;
+    if (a === "open") { ui.open = true; ui.msg = ""; render(); window.scrollTo(0, 0); }
+    else if (a === "back") { ui.open = false; ui.sel = null; ui.game = null; render(); window.scrollTo(0, 0); }
+    else if (a === "game") { ui.game = ui.game === b.dataset.id ? null : b.dataset.id; render(); }
+    else if (a === "del") confirmThen("del-" + b.dataset.id, () => { games = games.filter(g => g.id !== b.dataset.id); persist(); render(); });
+    else if (a === "all") { ui.all = !ui.all; render(); }
+    else if (a === "player") { ui.sel = b.dataset.k || null; ui.all = false; render(); window.scrollTo(0, 0); }
+    else if (a === "download") { download(); render(); }
+    else if (a === "share") share().then(render);
+    else if (a === "restore") { const f = document.getElementById("hx-file"); if (f) f.click(); }
+  });
+  document.addEventListener("change", ev => {
+    if (ev.target.id === "hx-range") { ui.range = ev.target.value; ui.sel = null; render(); }
+    if (ev.target.id === "hx-file" && ev.target.files && ev.target.files[0]) ev.target.files[0].text().then(restore, () => { ui.msg = "Couldn't read that file."; }).then(render);
+  });
+
+  return { sync, view, button, note, isOpen: () => ui.open, games: () => games };
+})();
+// Wrap the app's own save() and render(): every save keeps the archive current, and History takes over the screen while open.
+{
+  const appSave = save, appRender = render;
+  save = function () { hx.sync(); return appSave.apply(this, arguments); };
+  render = function () {
+    if (hx.isOpen()) { document.getElementById("app").innerHTML = hx.view(); return; }
+    return appRender.apply(this, arguments);
+  };
+}
+// A game already on this phone when History arrived is saved right away (dated now).
+hx.sync(); save();
+/* hx:js:end */
 render();
 keepAwake();
 </script>
