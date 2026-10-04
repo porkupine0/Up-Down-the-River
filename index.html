@@ -877,7 +877,7 @@ const hx = (() => {
       return `<div class="hx-game">
         <div class="hx-meta"><b>${e(whenTxt(g.date))}</b><span class="hint">${status}${g.note ? ` · ${e(g.note)}` : ""}</span></div>
         <div class="hx-scores num">${order.map(i => `<span class="${g.done && w.includes(i) ? "hx-win" : ""}">${e(sideLabel(g.sides[i]))} <b>${num(t[i])}</b></span>`).join(" · ")}</div>
-        <div class="btnrow hx-btns"><button class="small" type="button" data-hx="game" data-id="${e(g.id)}" id="hx-g-${e(g.id)}">${open ? "Hide scorecard" : "Scorecard"}</button><button class="small" type="button" data-hx="sres" data-id="${e(g.id)}" id="hx-s-${e(g.id)}">${ui.copied === g.id ? "Copied ✓" : "Share"}</button>${current ? "" : `<button class="small danger" type="button" data-hx="del" data-id="${e(g.id)}" id="hx-d-${e(g.id)}">${ui.confirm === del ? "Tap to delete" : "Delete"}</button>`}</div>
+        <div class="btnrow hx-btns"><button class="small" type="button" data-hx="game" data-id="${e(g.id)}" id="hx-g-${e(g.id)}">${open ? "Hide scorecard" : "Scorecard"}</button><button class="small" type="button" data-hx="sres" data-id="${e(g.id)}" id="hx-s-${e(g.id)}">${ui.copied === g.id ? "Copied ✓" : "Share"}</button>${!g.done && !current ? `<button class="small" type="button" data-hx="fin" data-id="${e(g.id)}" id="hx-f-${e(g.id)}">${ui.confirm === "fin-" + g.id ? "Tap to finish" : "Mark finished"}</button>` : ""}${current ? "" : `<button class="small danger" type="button" data-hx="del" data-id="${e(g.id)}" id="hx-d-${e(g.id)}">${ui.confirm === del ? "Tap to delete" : "Delete"}</button>`}</div>
         ${open ? scorecard(g) : ""}
       </div>`;
     }).join("");
@@ -1086,6 +1086,13 @@ const hx = (() => {
     else if (a === "back") { ui.open = false; ui.sel = null; ui.game = null; render(); window.scrollTo(0, 0); }
     else if (a === "game") { ui.game = ui.game === b.dataset.id ? null : b.dataset.id; render(); }
     else if (a === "del") confirmThen("del-" + b.dataset.id, () => { games = games.filter(g => g.id !== b.dataset.id); persist(); render(); });
+    // an unfinished game that isn't being played (abandoned, or copied in from another phone or icon) can be closed out: best total wins
+    else if (a === "fin") confirmThen("fin-" + b.dataset.id, () => {
+      const g = games.find(x => x.id === b.dataset.id); if (!g || g.done || g.id === state.hxId) return;
+      const t = totalsOf(g), best = g.lowWins ? Math.min(...t) : Math.max(...t);
+      g.done = true; g.winners = t.map((_, i) => i).filter(i => t[i] === best); g.updated = new Date().toISOString();
+      persist(); render();
+    });
     else if (a === "all") { ui.all = !ui.all; render(); }
     else if (a === "player") { ui.sel = b.dataset.k || null; ui.all = false; render(); window.scrollTo(0, 0); }
     else if (a === "download") { download(); render(); }
